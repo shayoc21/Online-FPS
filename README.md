@@ -1,13 +1,5 @@
-Open-GL project boilerplate.
+Early Development.
 
-Basic scene with skybox and *poorly* textured "tree".
+A 3D first person shooter developed entirely from scratch in C, only using a handful of low level dependencies (stb, glfw, glew).
 
-Simple shaders with diffuse lighting.
-
-This project is intended to be reusable, to speed up my OpenGL project development
-
-
-If you want to run it, just clone the repo, run ./build and then ./main
-
-Dependencies are GLFW and GLEW in your /usr/include, and gcc.
-I do not intend to port to windows
+Excuse my blender skills. Right now textures are all messed up, because I failed to bake correctly in blender, the texture code is working.
