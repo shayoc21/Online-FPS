@@ -13,7 +13,16 @@ Whats next:
 	My own level, no more shittily textured dust2
 	A HUD, including player-bound objects such as hands.
 	A renderer overhaul, new shaders and render pipeline that will give my game a unique aesthetic.
+	
+	Physics, kill me
+	menus w/ text
+	gameplay
+	A huge optimization stage, will rewrite many of the inefficient algorithms.
 
-	finally, probably in a couple months, gameplay and multiplayer.
+	Finally multiplayer.
 
+
+I expect to be done some time in the summer, but will continue development and refactoring intermittently until I'm happy.
+
+When I have free time I will refactor this into a real game, and publish it on steam.
 

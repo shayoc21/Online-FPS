@@ -1,5 +1,8 @@
 #include "collision.h"
 
+
+//Select plane for now just takes the middle face in faces, will add heuristics in my games optimization stage.
+
 Plane selectPlane(faces, faceCount)
 {
 	int middleFaceIndex = (faceCount-1)/2;
