@@ -1,0 +1,2 @@
+#!/bin/bash
+gcc -O0 -g -fsanitize=address,undefined -o main main.c camera.c raycast.c game.c scene.c object.c objparser.c mathlibrary/maths.c session.c shaders/shader.c -lm -I/usr/include/GLFW -I/usr/include/GL -lGL -lglfw -lGLEW

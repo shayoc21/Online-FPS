@@ -1,0 +1,19 @@
+i have added bsp, so my level should be partitioned nicely now.
+
+TODO :
+	add collisions in a way thats efficient, using the bsp.
+
+	Scene refactor:
+		Incorporate multiple objects into one bsp collision tree.
+		Store it in "Scene"
+		Rename "Scene" to "Level", allow switching between levels.
+
+Whats next:
+	A quick refactor, mainly of the math library and gameplay-based code.
+	My own level, no more shittily textured dust2
+	A HUD, including player-bound objects such as hands.
+	A renderer overhaul, new shaders and render pipeline that will give my game a unique aesthetic.
+
+	finally, probably in a couple months, gameplay and multiplayer.
+
+
