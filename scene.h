@@ -16,6 +16,6 @@ typedef struct Scene Scene;
 void initScene(Scene* scene);
 void drawScene(Scene* scene);
 void destroyScene(Scene* scene);
-float castRayThroughScene(Scene* scene, Ray ray, float radius);
+float getShortestSceneCollision(Scene* scene, Ray ray);
 
 #endif

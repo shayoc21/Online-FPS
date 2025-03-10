@@ -18,8 +18,7 @@ struct Object
 	vec3 position;
 	quaternion rotation;
 	vec3 scale;
-	Face* collisionFaces;
-	int collisionFaceCount;
+	BSPNode* collisionMesh;
 	int solid;
 };
 typedef struct Object Object;
@@ -41,7 +40,6 @@ void drawSkybox(Object* object);
 void destroyObject(Object* object);
 
 //collision functions
-int isObjectSolid(Object* object);
-Face* getObjectCollisionFaces(Object* object);
+BSPNode* getRootCollisionNode();
 
 #endif

@@ -62,12 +62,14 @@ void initObject
 		BSPNode* cMesh = generateCollisionMesh(objectSuffix);
 		object->collisionMesh = cMesh;
 		transformBSPTree(object->collisionMesh, object->modelMatrix);
+		int tc = countFacesInTree(object->collisionMesh);
+		printf(" for object %s, collision face count %d\n", objectSuffix, tc);
 		object->solid = 1;
 		free(objectSuffix);
 	}
 	else
 	{
-		object->collisionFaces = NULL;
+		object->collisionMesh = NULL;
 		object->solid = 0;
 	}
 }
@@ -158,7 +160,7 @@ void drawSkybox(Object* object)
 
 void destroyObject(Object* object)
 {
-	free(object->collisionFaces);
+	destroyBSPTree(object->collisionMesh);
 	return;
 }
 
@@ -167,8 +169,4 @@ int isObjectSolid(Object* object)
 	return object->solid;
 }
 
-Face* getObjectCollisionFaces(Object* object)
-{
-	return object->collisionFaces;
-}
 

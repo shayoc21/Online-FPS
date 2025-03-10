@@ -2,7 +2,7 @@
 #define _RAYCAST
 
 #include "mathlibrary/maths.h"
-#include "objparser.h"
+#include "collision.h"
 
 #include <math.h>
 

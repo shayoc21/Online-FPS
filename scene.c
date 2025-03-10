@@ -58,33 +58,45 @@ vec3 triangleCentroid(Face face)
 	return scaleVec3(sum, 1.0f/3.0f);
 }
 
-int calculateSceneCollision(Scene* scene, vec3 origin, float radius)
+float getShortestSceneCollision(Scene* scene, Ray ray)
 {
-	
+	//this is assumed.
+	vec3 playerPosition = ray.origin;
+	float shortestDistance = FLT_MAX;
 
-
-float castRayThroughScene(Scene* scene, Ray ray)
-{
-	Collision shortestRayToFace = { 0, FLT_MAX, {0, 0}};
+	//traverses the BSP collision tree of all solid objects in scene. raycasts through all scenes in the players leaf node.
 	for (int i = 0; i < scene->worldObjectCount; i++)
 	{
-		Object* obj = scene->worldObjects[i];
-		if (obj->solid)
+		Object* object = scene->worldObjects[i];
+		if (object->solid == 0)
 		{
-			for (int j = 0; j < obj->collisionFaceCount; j++)
+			continue;
+		}
+
+		//else traverse BSP
+
+		Face* playerFaces;
+		int playerFaceCount = 0;
+		traverseBSP(object->collisionMesh, playerPosition, &playerFaces, &playerFaceCount);
+		for (int j = 0; j < playerFaceCount; j++)
+		{
+			Face f = playerFaces[j];
+			/*printf("Face: %f %f %f\n"
+				   "	  %f %f %f\n"
+				   "	  %f %f %f\n", 
+				   f.a.x,f.a.y,f.a.z,
+				   f.b.x,f.b.y,f.b.z,
+				   f.c.x,f.c.y,f.c.z);*/
+			Collision faceCollision;
+			faceCollision = mollerTrumboreRaycast(ray, playerFaces[j]);
+			if (faceCollision.status && faceCollision.t < shortestDistance)
 			{
-				Face face = obj->collisionFaces[j];
-				Collision rayToFace = mollerTrumboreRaycast(ray, face);
-				if (rayToFace.status)
-				{
-					if (rayToFace.t < shortestRayToFace.t)
-					{
-						shortestRayToFace = rayToFace;
-					}
-				}
+				shortestDistance = faceCollision.t;
 			}
 		}
+		free(playerFaces);
 	}
-	return shortestRayToFace.t;
+	return shortestDistance;
 }
-		
+
+	

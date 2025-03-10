@@ -29,6 +29,29 @@ void runGame(Game* game)
 	printf("Running Game...\n");
 	int frameCount = 0;
 	float previousTime = glfwGetTime();
+
+	Object* object = game->scene.worldObjects[0];
+	Face* playerFaces = NULL;
+	int playerFaceCount = 0;
+	traverseBSP(object->collisionMesh, currentCamera->position, &playerFaces, &playerFaceCount);
+	
+	GLuint VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	GLuint VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, playerFaceCount*sizeof(Face), playerFaces, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*) 0);
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
+
+	GLuint SHADER = loadShader("shaders/debugRed.glsl");
+	printf("s: %d\n", SHADER);
+
+	int c = 0;
 	while (isGameRunning(game))
 	{
 	 	float currentTime = glfwGetTime();
@@ -38,6 +61,23 @@ void runGame(Game* game)
 		clearScreen();
 
 		//draw screen
+
+	Face* playerFaces = NULL;
+	int playerFaceCount = 0;
+	traverseBSP(object->collisionMesh, currentCamera->position, &playerFaces, &playerFaceCount);
+		glUseProgram(SHADER);
+		glBindVertexArray(VAO);
+
+	glBufferData(GL_ARRAY_BUFFER, playerFaceCount*sizeof(Face), playerFaces, GL_STATIC_DRAW);
+		int pl = glGetUniformLocation(SHADER, "projection");
+		int vl = glGetUniformLocation(SHADER, "view");
+			
+		glUniformMatrix4fv(pl, 1, GL_TRUE, currentCamera->projection.m);
+		glUniformMatrix4fv(vl, 1, GL_TRUE, currentCamera->view.m);
+
+		glDrawArrays(GL_TRIANGLES, 0, playerFaceCount*3);
+		c++;
+
 		drawScene(&game->scene);
 		//drawHUD(&game->HUD);
 
@@ -45,19 +85,18 @@ void runGame(Game* game)
 		glfwSwapBuffers(game->window);
 
 		currentCamera->position.y = 118;
-
 		GLenum err = glGetError();
 		while (err != GL_NO_ERROR)
 		{
 			printf("OpenGL Error: %d\n", err);
 		}
-
 		if (currentTime - previousTime >= 10.0)
 		{
 			printf("	...FPS : %f\n", (frameCount / 10.0f));
 			frameCount = 0;
 			previousTime = currentTime;
 		}	
+
 	}
 }
 
@@ -106,18 +145,18 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 void movePlayer(Game* game, vec3 translation)
 {
 	Camera* camera = currentCamera;
-	vec3 newPosition = addVec3(camera->position, translation);
+	vec3 newPosition = addVec3(currentCamera->position, translation);
 
 	int collisionDetected = 0;
 	float threshold = getVec3Length(translation) * 2;
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 8; i++)
 	{
-		float angle = (2 * PI / 4) * i;
+		float angle = (2 * PI / 8) * i;
 		vec3 direction = { cos(angle), 0.0f, sin(angle) };
 
-		Ray ray = { direction, newPosition };
-		float distance = castRayThroughScene(&game->scene, ray, threshold);
+		Ray ray = { normalizeVec3(direction), newPosition };
+		float distance = getShortestSceneCollision(&game->scene, ray);
 		if (distance < threshold)
 		{
 			collisionDetected = 1;
