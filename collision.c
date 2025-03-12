@@ -1,24 +1,152 @@
 #include "collision.h"
 
+float dot(vec3 a, vec3 b)
+{
+	return a.x*b.x+a.y*b.y+a.z*b.z;
+}
 
-//Select plane for now just takes the middle face in faces, will add heuristics in my games optimization stage.
+vec3 interpolate(vec3 a, vec3 b, float t)
+{
+	return (vec3)
+	{
+		a.x + t * (b.x - a.x),
+		a.y + t * (b.y - a.y),
+		a.z + t * (b.z - a.z)
+	};
+}
+
+// returns whether or not the first face in out is front.
+int splitTriangle(Face triangle, Plane plane, Face** out)
+{
+
+    float da = dot(triangle.a, plane.normal) + plane.distance;
+    float db = dot(triangle.b, plane.normal) + plane.distance;
+    float dc = dot(triangle.c, plane.normal) + plane.distance;
+
+	if (da == 0 || db == 0 || dc == 0)
+	{
+		//printf("onplane\n");
+	}
+
+    int ina = da >= -0.001f, inb = db >= -0.001f, inc = dc >= -0.001f;
+    int totalIn = ina + inb + inc;
+
+	vec3 intersectionAB;
+	vec3 intersectionBC;
+	vec3 intersectionAC;
+    int intersectionCount = 0;
+	int intersectionEdge[2];
+	int intersectionEdgeCount = 0;
+
+    if (ina != inb) {
+        float t = -da / (db - da);
+        intersectionAB = interpolate(triangle.a, triangle.b, t);
+    }
+    if (ina != inc) {
+		float t = -da / (dc - da);
+		intersectionAC = interpolate(triangle.a, triangle.c, t);
+	}
+	if (inb != inc && intersectionCount < 2) {
+		float t = -db / (dc - db);
+		intersectionBC = interpolate(triangle.b, triangle.c, t);
+	}
+
+	if ((ina != inb && ina != inc) && (inb == inc)) 
+	{
+		//a is isolated by plane
+
+		(*out)[0] = (Face) { triangle.a, intersectionAB, intersectionAC };
+		(*out)[1] = (Face) { intersectionAB, triangle.b, triangle.c };
+		(*out)[2] = (Face) { intersectionAC, intersectionAB, triangle.c };
+		return ina;
+	}
+	else if ((inb != ina && inb != inc) && (ina == inc))
+	{
+		//b is isolated by plane
+
+		(*out)[0] = (Face) { triangle.b, intersectionBC, intersectionAB };
+		(*out)[1] = (Face) { intersectionBC, triangle.c, triangle.a };
+		(*out)[2] = (Face) { intersectionAB, intersectionBC, triangle.a };
+		return inb;
+	}
+	else if ((inc != ina && inc != inb) && (ina == inb))
+	{	
+		//c is isolated by plane 
+
+		(*out)[0] = (Face) { triangle.c, intersectionAC, intersectionBC };
+		(*out)[1] = (Face) { intersectionAC, triangle.a, triangle.b };
+		(*out)[2] = (Face) { intersectionBC, intersectionAC, triangle.b };
+		return inc;
+	}
+	return 0;
+}
 
 Plane selectPlane(Face* faces, int faceCount)
 {
-	int middleFaceIndex = (faceCount-1)/2;
-	Face planeFace = faces[middleFaceIndex];
+	printf("Selecting plane! faceCount : %d\n", faceCount);
+	//heuristic finds the best splitting plane.
+	float bestCost = FLT_MAX;
+	Plane bestPlane = { {0,0,0}, 0 };
+	int found = 0;
+	const float epsilon = 0.001f;
 
-	vec3 e1 = subtractVec3(planeFace.b, planeFace.a);
-	vec3 e2 = subtractVec3(planeFace.c, planeFace.a);
+	for (int i = 0; i < faceCount; i++)
+	{
+		Face candidateFace = faces[i];
+		vec3 e1 = subtractVec3(candidateFace.b, candidateFace.a);
+		vec3 e2 = subtractVec3(candidateFace.c, candidateFace.a);
+		vec3 normal = normalizeVec3(crossVec3(e1, e2));
+		float d = -dot(normal, candidateFace.a);
+		Plane candidatePlane = { normal, d };
 
-	vec3 normal = normalizeVec3(crossVec3(e1, e2));
+		int frontCount = 0, backCount = 0, splitCount = 0;
 
-	float d = -(normal.x * planeFace.a.x + normal.y * planeFace.a.y + normal.z * planeFace.a.z);
+		for (int j = 0; j < faceCount; j++)
+		{
+			Face face = faces[j];
+			float da = dot(face.a, candidatePlane.normal) + candidatePlane.distance;
+			float db = dot(face.b, candidatePlane.normal) + candidatePlane.distance;
+			float dc = dot(face.c, candidatePlane.normal) + candidatePlane.distance;
+			
+			int ina = (da >= -epsilon);
+			int inb = (db >= -epsilon);
+			int inc = (dc >= -epsilon);
 
-	Plane plane;
-	plane.normal = normal;
-	plane.distance = d;
-	return plane;
+			if (ina && inb && inc)
+			{
+				frontCount++;
+			}
+			else if (!ina && !inb && !inc)
+			{
+				backCount++;
+			}
+			else
+			{
+				splitCount++;
+			}
+		}
+
+		if (frontCount == 0 || backCount == 0)
+		{
+			continue;
+		}
+		
+		float cost = fabsf((float)frontCount - (float)backCount)+(float)splitCount * 10.0f;
+		if (cost < bestCost)
+		{
+			bestCost = cost;
+			bestPlane = candidatePlane;
+			found = 1;
+		}
+	}
+
+	if (!found)
+	{
+		// there is no splitting plane found. therefore the node is a leafnode and nullPlane is returned.
+		return (Plane) { {0,0,0}, 0 };
+	}
+	printf("Done\n");
+	return bestPlane;				
 }
 
 void partitionFaces(Face* faces, int faceCount, Plane plane, Face** frontFaces, Face** backFaces, int* frontCount, int* backCount)
@@ -26,8 +154,8 @@ void partitionFaces(Face* faces, int faceCount, Plane plane, Face** frontFaces, 
 	*frontCount = 0;
 	*backCount = 0;
 
-	*frontFaces = malloc(faceCount * sizeof(Face));
-	*backFaces = malloc(faceCount * sizeof(Face));
+	*frontFaces = malloc(faceCount * 3 * sizeof(Face));
+	*backFaces = malloc(faceCount * 3 * sizeof(Face));
 
 	for (int i = 0; i < faceCount; i++)
 	{
@@ -37,19 +165,47 @@ void partitionFaces(Face* faces, int faceCount, Plane plane, Face** frontFaces, 
 		float db = plane.normal.x*face.b.x+plane.normal.y*face.b.y+plane.normal.z*face.b.z+plane.distance;
 		float dc = plane.normal.x*face.c.x+plane.normal.y*face.c.y+plane.normal.z*face.c.z+plane.distance;
 
-		if (da >= 0 || db >= 0 || dc >= 0)
+		if (da >= -0.001f && db >= -0.001f && dc >= -0.001f)
 		{
+			//printf("A\n");
 			(*frontFaces)[(*frontCount)++] = face;
 		}
 		
-		if (da < 0 || db < 0 || dc < 0)
+		else if (da <= 0.001f && db <= 0.001f && dc <= 0.001f)
 		{
+			//printf("B\n");
 			(*backFaces)[(*backCount)++] = face;
+		}
+
+		else
+		{
+			//printf("C\n");
+			//face is split by plane.
+			Face* splitFaces = (Face*)malloc(sizeof(Face) * 3);
+			int isSingleFaceFront = splitTriangle(face, plane, &splitFaces);
+			if (isSingleFaceFront)
+			{
+				(*frontFaces)[(*frontCount)++] = splitFaces[0];
+				(*backFaces)[(*backCount)++] = splitFaces[1];
+				(*backFaces)[(*backCount)++] = splitFaces[2];
+			}
+			else
+			{
+				(*backFaces)[(*backCount)++] = splitFaces[0];
+				(*frontFaces)[(*frontCount)++] = splitFaces[1];
+				(*frontFaces)[(*frontCount)++] = splitFaces[2];
+			}
+			free(splitFaces);
 		}
 	}
 
 	*frontFaces = realloc(*frontFaces, *frontCount * sizeof(Face));
 	*backFaces = realloc(*backFaces, *backCount * sizeof(Face));
+}
+
+int planeEquals(Plane plane1, Plane plane2)
+{
+	return (plane1.normal.x == plane2.normal.x && plane1.normal.y == plane2.normal.y && plane1.normal.z == plane2.normal.z && plane1.distance == plane2.distance);
 }
 
 BSPNode* generateBSPTree(Face* faces, int faceCount)
@@ -60,24 +216,27 @@ BSPNode* generateBSPTree(Face* faces, int faceCount)
 	BSPNode* node = (BSPNode*) malloc(sizeof(BSPNode));
 	
 	node->splittingPlane = selectPlane(faces, faceCount);
-	Face* frontFaces;
-	Face* backFaces;
-	int frontCount, backCount;
-	partitionFaces(faces, faceCount, node->splittingPlane, &frontFaces, &backFaces, &frontCount, &backCount);
 
-	//is a leaf node
-	if (frontCount == faceCount || backCount == faceCount)
+	Plane nullPlane = { {0, 0, 0}, 0 };
+	//is a leaf node -- none of the planes provide any splits.
+	if (planeEquals(node->splittingPlane, nullPlane))
 	{
 		node->faces = faces;
 		node->faceCount = faceCount;
 		node->front = NULL;
 		node->back = NULL;
-		free(frontFaces);
-		free(backFaces);
+		printf("Going up!\n");
 		return node;
 	}
+	
+	Face* frontFaces;
+	Face* backFaces;
+	int frontCount, backCount;
+	partitionFaces(faces, faceCount, node->splittingPlane, &frontFaces, &backFaces, &frontCount, &backCount);
 
+	printf("Going front!\n");
 	node->front = generateBSPTree(frontFaces, frontCount);
+	printf("Going back!\n");
 	node->back = generateBSPTree(backFaces, backCount);
 
 	//is not a leaf node, and so has no faces
@@ -101,7 +260,7 @@ BSPNode* generateCollisionMesh(const char* collisionFileSuffix)
 	FILE* collisionFile = fopen(buffer, "r");
 	if (!collisionFile)
 	{
-		printf("AAFailed to open file: %s\n", collisionFileSuffix);
+		printf("Failed to open collision file: %s\n", collisionFileSuffix);
 		return NULL;
 	}
 
@@ -139,10 +298,105 @@ void transformFace(Face* face, mat4 matrix)
 	face->c = transformVec3(face->c, matrix);
 }
 
+float determinantMat3(float m[9]) {
+    return 
+      m[0] * (m[4] * m[8] - m[5] * m[7]) -
+      m[1] * (m[3] * m[8] - m[5] * m[6]) +
+      m[2] * (m[3] * m[7] - m[4] * m[6]);
+}
+
+// Get 3x3 submatrix excluding row `excludeRow` and column `excludeCol`
+void getSubmatrix(mat4 m, int excludeRow, int excludeCol, float sub[9]) {
+    int subIndex = 0;
+    for (int row = 0; row < 4; row++) {
+        if (row == excludeRow) continue;
+        for (int col = 0; col < 4; col++) {
+            if (col == excludeCol) continue;
+            sub[subIndex] = m.m[row * 4 + col];
+            subIndex++;
+        }
+    }
+}
+
+mat4 inverseMat4(mat4 m) {
+    mat4 inv;
+    float det = 0.0f;
+
+    // Compute matrix of minors and cofactors
+    for (int row = 0; row < 4; row++) {
+        for (int col = 0; col < 4; col++) {
+            // Get submatrix (3x3) excluding current row and column
+            float sub[9];
+            getSubmatrix(m, row, col, sub);
+
+            // Compute minor and cofactor
+            float minor = determinantMat3(sub);
+            float cofactor = minor * ((row + col) % 2 == 0 ? 1.0f : -1.0f);
+
+            // Transpose (adjugate) by storing at [col][row]
+            inv.m[col * 4 + row] = cofactor;
+
+            // Accumulate determinant using first row
+            if (row == 0) {
+                det += m.m[col] * cofactor; // m[col] = m.m[0*4 + col]
+            }
+        }
+    }
+
+    // Handle singular matrix
+    if (fabsf(det) < 1e-8f) {
+        mat4 identity = { .m = { 
+            1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1 
+        }};
+        return identity;
+    }
+
+    // Divide adjugate by determinant
+    float invDet = 1.0f / det;
+    for (int i = 0; i < 16; i++) {
+        inv.m[i] *= invDet;
+    }
+
+    return inv;
+}
+
+mat4 transpose(mat4 matrix)
+{
+	mat4 result;
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			result.m[i+4*j] = matrix.m[j+4*i];
+		}
+	}
+	return result;
+}
+
+void transformPlane(Plane* plane, mat4 matrix)
+{
+	mat4 invTranspose = transpose(inverseMat4(matrix));
+	vec3 normal = plane->normal;
+	plane->normal = transformVec3(normal, invTranspose);
+
+	vec3 pointOnPlane = scaleVec3(normal, -plane->distance);
+	vec3 transformedPoint = transformVec3(pointOnPlane, matrix);
+	plane->distance = -dot(plane->normal, transformedPoint);
+}
+
 void transformBSPTree(BSPNode* node, mat4 modelMatrix)
 {
 	if (node == NULL) return;
 	
+	Plane nullPlane = {{0,0,0},0};
+	if (!planeEquals(node->splittingPlane, nullPlane))
+	{
+		transformPlane(&node->splittingPlane, modelMatrix);
+	}
+
 	for (int i = 0; i < node->faceCount; i++)
 	{
 		transformFace(&node->faces[i], modelMatrix);
@@ -169,8 +423,8 @@ void traverseBSP(BSPNode* node, vec3 position, Face** faceBuffer, int* faceCount
 	}
 
 	Plane np = node->splittingPlane;
-	float d = np.normal.x * position.x + np.normal.y * position.y + np.normal.z * position.z - np.distance;
-	if (d >= 0)
+	float d = np.normal.x * position.x + np.normal.y * position.y + np.normal.z * position.z + np.distance;
+	if (d >= 0.0f)
 	{
 		traverseBSP(node->front, position, faceBuffer, faceCountBuffer);
 	}

@@ -43,7 +43,6 @@ void runGame(Game* game)
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, playerFaceCount*sizeof(Face), playerFaces, GL_STATIC_DRAW);
-	free(playerFaces);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*) 0);
 	glEnableVertexAttribArray(0);
@@ -65,13 +64,11 @@ void runGame(Game* game)
 
 	Face* playerFaces = NULL;
 	int playerFaceCount = 0;
-	vec3 pos = currentCamera->position;
-	traverseBSP(object->collisionMesh, pos, &playerFaces, &playerFaceCount);
+	traverseBSP(object->collisionMesh, currentCamera->position, &playerFaces, &playerFaceCount);
 		glUseProgram(SHADER);
 		glBindVertexArray(VAO);
 
 	glBufferData(GL_ARRAY_BUFFER, playerFaceCount*sizeof(Face), playerFaces, GL_STATIC_DRAW);
-	free(playerFaces);
 		int pl = glGetUniformLocation(SHADER, "projection");
 		int vl = glGetUniformLocation(SHADER, "view");
 			
@@ -87,6 +84,7 @@ void runGame(Game* game)
 		//swap buffers
 		glfwSwapBuffers(game->window);
 
+		currentCamera->position.y = 118;
 		GLenum err = glGetError();
 		while (err != GL_NO_ERROR)
 		{
@@ -172,27 +170,6 @@ void movePlayer(Game* game, vec3 translation)
 	camera->view = lookMat4(camera->position, addVec3(camera->position, camera->front), camera->up);
 }
 
-void movePlayerHeight(Game* game, vec3 translation)
-{
-	Camera* camera = currentCamera;
-	vec3 newPosition = addVec3(currentCamera->position, translation);
-
-	float threshold = getVec3Length(translation) * 2;
-
-	Ray ray = { normalizeVec3(translation), newPosition };
-	float distance = getShortestSceneCollision(&game->scene, ray);
-	if (distance < threshold)
-	{
-		return;
-	}
-	else
-	{
-		camera->position = newPosition;
-		camera->view = lookMat4(camera->position, addVec3(camera->position, camera->front), camera->up);
-	}
-}
-	
-
 void pollInputs(Game* game)
 {
 	glfwPollEvents();
@@ -230,16 +207,6 @@ void pollInputs(Game* game)
 	{
 		vec3 movement = scaleVec3(right, velocity);
 		movePlayer(game, movement);
-	}
-	if (glfwGetKey(game->window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-	{
-		vec3 movement = scaleVec3(vector(0,1,0), -velocity);
-		movePlayerHeight(game, movement);
-	}
-	if (glfwGetKey(game->window, GLFW_KEY_SPACE) == GLFW_PRESS)
-	{
-		vec3 movement = scaleVec3(vector(0,1,0), velocity);
-		movePlayerHeight(game, movement);
 	}
 	if (glfwGetKey(game->window, GLFW_KEY_P) == GLFW_PRESS)
 	{
