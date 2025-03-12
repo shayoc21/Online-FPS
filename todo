@@ -1,8 +1,9 @@
-i have added bsp, so my level should be partitioned nicely now.
+collisions finally work (for the most part), and are a lot more efficient.
+before BSP i was getting 20fps, because collisions would search through every single face in the scene, now I'm getting 6000fps, which is a 300x speedup
+There are still bugs, some faces aren't included and some faces collide on the wrong side.
+This will be fixed soon.
 
 TODO :
-	add collisions in a way thats efficient, using the bsp.
-
 	Scene refactor:
 		Incorporate multiple objects into one bsp collision tree.
 		Store it in "Scene"
