@@ -28,23 +28,23 @@ int splitTriangle(Face triangle, Plane plane, Face** out)
 		//printf("onplane\n");
 	}
 
-    int ina = da >= -0.001f, inb = db >= -0.001f, inc = dc >= -0.001f;
+    int ina = da >= -0.002f, inb = db >= -0.002f, inc = dc >= -0.002f;
     int totalIn = ina + inb + inc;
 
 	vec3 intersectionAB;
 	vec3 intersectionBC;
 	vec3 intersectionAC;
     int intersectionCount = 0;
-	int intersectionEdge[2];
-	int intersectionEdgeCount = 0;
 
     if (ina != inb) {
         float t = -da / (db - da);
         intersectionAB = interpolate(triangle.a, triangle.b, t);
+		intersectionCount++;
     }
     if (ina != inc) {
 		float t = -da / (dc - da);
 		intersectionAC = interpolate(triangle.a, triangle.c, t);
+		intersectionCount++;
 	}
 	if (inb != inc && intersectionCount < 2) {
 		float t = -db / (dc - db);
@@ -88,7 +88,7 @@ Plane selectPlane(Face* faces, int faceCount)
 	float bestCost = FLT_MAX;
 	Plane bestPlane = { {0,0,0}, 0 };
 	int found = 0;
-	const float epsilon = 0.001f;
+	const float epsilon = 0.002f;
 
 	for (int i = 0; i < faceCount; i++)
 	{
@@ -165,13 +165,13 @@ void partitionFaces(Face* faces, int faceCount, Plane plane, Face** frontFaces, 
 		float db = plane.normal.x*face.b.x+plane.normal.y*face.b.y+plane.normal.z*face.b.z+plane.distance;
 		float dc = plane.normal.x*face.c.x+plane.normal.y*face.c.y+plane.normal.z*face.c.z+plane.distance;
 
-		if (da >= -0.001f && db >= -0.001f && dc >= -0.001f)
+		if (da >= -0.002f && db >= -0.002f && dc >= -0.002f)
 		{
 			//printf("A\n");
 			(*frontFaces)[(*frontCount)++] = face;
 		}
 		
-		else if (da <= 0.001f && db <= 0.001f && dc <= 0.001f)
+		else if (da <= 0.002f && db <= 0.002f && dc <= 0.002f)
 		{
 			//printf("B\n");
 			(*backFaces)[(*backCount)++] = face;
@@ -225,6 +225,7 @@ BSPNode* generateBSPTree(Face* faces, int faceCount)
 		node->faceCount = faceCount;
 		node->front = NULL;
 		node->back = NULL;
+		node->splittingPlane = nullPlane;
 		printf("Going up!\n");
 		return node;
 	}
@@ -406,11 +407,14 @@ void transformBSPTree(BSPNode* node, mat4 modelMatrix)
 	transformBSPTree(node->back, modelMatrix);
 }
 
+//function to return list of faces around specific point
 void traverseBSP(BSPNode* node, vec3 position, Face** faceBuffer, int* faceCountBuffer)
 {
 	if (!node) return;
 
-	if (node->faceCount > 0)
+	Plane nullPlane = { {0, 0, 0}, 0 };
+	//is a leaf node -- none of the planes provide any splits.
+	if (planeEquals(node->splittingPlane, nullPlane))
 	{
 		//leaf node... allocate memory to faceBuffer and fill it
 		*faceBuffer = (Face*)malloc(node->faceCount * sizeof(Face));
@@ -424,7 +428,7 @@ void traverseBSP(BSPNode* node, vec3 position, Face** faceBuffer, int* faceCount
 
 	Plane np = node->splittingPlane;
 	float d = np.normal.x * position.x + np.normal.y * position.y + np.normal.z * position.z + np.distance;
-	if (d >= 0.0f)
+	if (d >= -0.002f)
 	{
 		traverseBSP(node->front, position, faceBuffer, faceCountBuffer);
 	}
@@ -433,7 +437,83 @@ void traverseBSP(BSPNode* node, vec3 position, Face** faceBuffer, int* faceCount
 		traverseBSP(node->back, position, faceBuffer, faceCountBuffer);
 	}
 }
+int c;
 
+void FUCKTHISSHIT()
+{
+	c = 0;
+}
+
+//function returns the closest face collision from a ray in the BSP tree.
+void raycastBSP(BSPNode* node, Ray ray, FaceCollision* closestCollision)
+{
+	Plane nullPlane = {0};
+	if (planeEquals(nullPlane, node->splittingPlane))
+	{
+		//is a leaf node...
+		for (int i = 0; i < node->faceCount; i++)
+		{
+			Face face = node->faces[i];
+			Collision collision = mollerTrumboreRaycast(ray, face);
+			c++;
+			if (!collision.status || collision.t > closestCollision->distance)
+			{
+				continue;
+			}
+			else
+			{
+				//node contains a closer face
+				closestCollision->distance = collision.t;
+				closestCollision->collidedFace = face;
+				closestCollision->didCollide = 1;
+				closestCollision->barycentricCoordinates = collision.barycentricCoordinates;
+			}
+		}
+		return;
+	}
+
+	float distance = dot(ray.origin, node->splittingPlane.normal) + node->splittingPlane.distance;
+	float denominator = dot(ray.ray, node->splittingPlane.normal);
+	
+	BSPNode* nearChild;
+	BSPNode* farChild;
+
+	if (distance >= -0.002f)
+	{
+		nearChild = node->front;
+		farChild = node->back;
+	}
+	else
+	{
+		nearChild = node->back;
+		farChild = node->front;
+	}
+	
+	if (denominator == 0)
+	{
+		raycastBSP(nearChild, ray, closestCollision);
+		return;
+	}
+
+	float t = -distance/denominator;
+	
+	if (t <= 0.002f)
+	{
+		raycastBSP(nearChild, ray, closestCollision);
+		return;
+	}
+
+	raycastBSP(nearChild, ray, closestCollision);
+
+	Ray newRay;
+	newRay.ray = ray.ray;
+	newRay.origin = addVec3(ray.origin, scaleVec3(ray.ray, t + 0.002f));
+
+	raycastBSP(farChild, newRay, closestCollision);
+	return;
+}
+
+//function to cast ray, and return all faces around the ray
 int countFacesInTree(BSPNode* node) {
     if (node == NULL) {
         return 0; // Base case: empty node

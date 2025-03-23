@@ -52,3 +52,37 @@ Collision mollerTrumboreRaycast(Ray ray, Face face)
 	return (Collision) { 1, t, (vec2) { u, v} };
 }
 
+PlaneCollision rayPlaneIntersection(Ray ray, Plane plane)
+{
+	PlaneCollision result = {0, 0.0f, {0.0f, 0.0f, 0.0f}};
+
+	const float denominator = getVec3Dot(plane.normal, ray.ray);
+	const float numerator = getVec3Dot(plane.normal, ray.origin) + plane.distance;
+
+	if (fabsf(denominator) < 0.0002f)
+	{
+		if (fabsf(numerator) < 0.0002f)
+		{
+			result.status = 0;
+			result.t = 0.0f;
+			result.worldPosition = ray.origin;
+		}
+		return result;
+	}
+
+	const float t = -numerator / denominator;
+	
+	if (t < 0.0002f)
+	{
+		result.status = 0;
+		result.t = 0.0f;
+		result.worldPosition = ray.origin;
+		return result;
+	}
+
+	result.status = 1;
+	result.t = t;
+	result.worldPosition = addVec3(ray.origin, scaleVec3(ray.ray, t));
+
+	return result;
+}

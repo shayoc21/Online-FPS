@@ -3,22 +3,7 @@
 
 #include "mathlibrary/maths.h"
 #include "objparser.h"
-
-struct Face
-{
-	vec3 a;
-	vec3 b;
-	vec3 c;
-};
-typedef struct Face Face;
-
-struct Plane
-{
-	vec3 normal;
-	float distance;
-};
-typedef struct Plane Plane;
-
+#include "raycast.h"
 struct BSPNode
 {
 	Plane splittingPlane;
@@ -30,10 +15,21 @@ struct BSPNode
 };
 typedef struct BSPNode BSPNode;
 
+struct FaceCollision
+{
+	Face collidedFace;
+	float distance;
+	vec2 barycentricCoordinates;
+	int didCollide;
+};
+typedef struct FaceCollision FaceCollision;
+
 BSPNode* generateCollisionMesh(const char* collisionFileSuffix);
 void transformBSPTree(BSPNode* node, mat4 modelMatrix);
 void traverseBSP(BSPNode* node, vec3 position, Face** faceBuffer, int* faceCountBuffer);
+void raycastBSP(BSPNode* node, Ray ray, FaceCollision* closestCollision);
 void destroyBSPTree(BSPNode* node);
 int countFacesInTree(BSPNode* node);
+void FUCKTHISSHIT();
 
 #endif
