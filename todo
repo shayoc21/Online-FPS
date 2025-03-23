@@ -1,27 +1,17 @@
-collisions finally work (for the most part), and are a lot more efficient.
-before BSP i was getting 20fps, because collisions would search through every single face in the scene, now I'm getting 6000fps, which is a 300x speedup
-There are still bugs, some faces aren't included and some faces collide on the wrong side.
-This will be fixed soon.
 
-TODO :
-	Scene refactor:
-		Incorporate multiple objects into one bsp collision tree.
-		Store it in "Scene"
-		Rename "Scene" to "Level", allow switching between levels.
+About 2 weeks ago I finished my collisions, but TWO faces in my scene didnt work.
+This was because the raycast would only search faces through my partition, and not the other partitions the ray traverses through.
+I've fixed this, now all faces in my scene have collisions
 
-Whats next:
-	A quick refactor, mainly of the math library and gameplay-based code.
-	My own level, no more shittily textured dust2
-	A HUD, including player-bound objects such as hands.
-	A renderer overhaul, new shaders and render pipeline that will give my game a unique aesthetic.
-	
-	Physics, kill me
-	menus w/ text
-	gameplay
-	A huge optimization stage, will rewrite many of the inefficient algorithms.
+Before BSP optimisation:
+	24fps, really slow
+After BSP but before thorough raycast:
+	6000fps, really fast
+Now:
+	About 1000fps when constantly moving around, fast enough but not great
 
-	Finally multiplayer.
-
+For now I am done optimising this, I've never had less fun in my life
+I'm going to do a huge refactor now, followed by a graphics overhaul, before finally implementing gameplay and multiplayer.
 
 I expect to be done some time in the summer, but will continue development and refactoring intermittently until I'm happy.
 
