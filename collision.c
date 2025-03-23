@@ -444,8 +444,73 @@ void FUCKTHISSHIT()
 	c = 0;
 }
 
+//gets all faces in all partitions the ray intersects. probably... probably could also be a bit quicker.
+//ive been doing collisions and raycasting for like 2 weeks and im starting to resent john carmack
+//how did he do this in the 90s??? will program doom myself someday to prove im not too stupid for BSP trees.
+void raycastBSP(BSPNode* node, Ray ray, Face** faceBuffer, int* faceCountBuffer)
+{
+	Plane nullPlane = { {0, 0, 0}, 0 };
+	//is a leaf node -- none of the planes provide any splits.
+	if (planeEquals(node->splittingPlane, nullPlane))
+	{       
+	// Append faces to the buffer
+        size_t currentCount = *faceCountBuffer;
+        size_t newCount = currentCount + node->faceCount;
+        *faceBuffer = (Face*)realloc(*faceBuffer, newCount * sizeof(Face));
+        if (*faceBuffer == NULL) {
+            *faceCountBuffer = 0; // Handle allocation failure
+            return;
+        }
+        for (int i = 0; i < node->faceCount; i++) {
+            (*faceBuffer)[currentCount + i] = node->faces[i];
+        }
+        *faceCountBuffer = newCount;
+        return;
+	}
+	
+	float distance = dot(ray.origin, node->splittingPlane.normal) + node->splittingPlane.distance;
+	float denominator = dot(ray.ray, node->splittingPlane.normal);
+	
+	BSPNode* nearChild;
+	BSPNode* farChild;
+
+	if (distance >= 0)
+	{
+		nearChild = node->front;
+		farChild = node->back;
+	}
+	else
+	{
+		nearChild = node->back;
+		farChild = node->front;
+	}
+	
+	if (denominator == 0)
+	{
+		raycastBSP(nearChild, ray, faceBuffer, faceCountBuffer);
+		return;
+	}
+
+	float t = -distance/denominator;
+
+	if (t < 0)
+	{
+		raycastBSP(nearChild, ray, faceBuffer, faceCountBuffer);
+		return;
+	}	
+
+	raycastBSP(nearChild, ray, faceBuffer, faceCountBuffer);
+
+	Ray newRay;
+	newRay.ray = ray.ray;
+	newRay.origin = addVec3(ray.origin, scaleVec3(ray.ray, t));
+
+	raycastBSP(farChild, newRay, faceBuffer, faceCountBuffer);
+	return;
+}
+
 //function returns the closest face collision from a ray in the BSP tree.
-void raycastBSP(BSPNode* node, Ray ray, FaceCollision* closestCollision)
+/*void AraycastBSP(BSPNode* node, Ray ray, FaceCollision* closestCollision)
 {
 	Plane nullPlane = {0};
 	if (planeEquals(nullPlane, node->splittingPlane))
@@ -511,7 +576,7 @@ void raycastBSP(BSPNode* node, Ray ray, FaceCollision* closestCollision)
 
 	raycastBSP(farChild, newRay, closestCollision);
 	return;
-}
+}*/
 
 //function to cast ray, and return all faces around the ray
 int countFacesInTree(BSPNode* node) {

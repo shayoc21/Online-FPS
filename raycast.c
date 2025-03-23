@@ -23,6 +23,8 @@ Collision mollerTrumboreRaycast(Ray ray, Face face)
 	vec3 D = ray.ray;
 
 	//compute edge vectors
+
+	//THIS CAN BE PRECOMPUTED!!!
 	vec3 e1 = {v1.x-v0.x,v1.y-v0.y,v1.z-v0.z};
 	vec3 e2 = {v2.x-v0.x,v2.y-v0.y,v2.z-v0.z};
 	

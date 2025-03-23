@@ -27,7 +27,7 @@ typedef struct FaceCollision FaceCollision;
 BSPNode* generateCollisionMesh(const char* collisionFileSuffix);
 void transformBSPTree(BSPNode* node, mat4 modelMatrix);
 void traverseBSP(BSPNode* node, vec3 position, Face** faceBuffer, int* faceCountBuffer);
-void raycastBSP(BSPNode* node, Ray ray, FaceCollision* closestCollision);
+void raycastBSP(BSPNode* node, Ray ray, Face** faceBuffer, int* faceCountBuffer);
 void destroyBSPTree(BSPNode* node);
 int countFacesInTree(BSPNode* node);
 void FUCKTHISSHIT();
