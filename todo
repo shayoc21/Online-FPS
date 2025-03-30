@@ -1,17 +1,6 @@
 
-About 2 weeks ago I finished my collisions, but TWO faces in my scene didnt work.
-This was because the raycast would only search faces through my partition, and not the other partitions the ray traverses through.
-I've fixed this, now all faces in my scene have collisions
-
-Before BSP optimisation:
-	24fps, really slow
-After BSP but before thorough raycast:
-	6000fps, really fast
-Now:
-	About 1000fps when constantly moving around, fast enough but not great
-
-For now I am done optimising this, I've never had less fun in my life
-I'm going to do a huge refactor now, followed by a graphics overhaul, before finally implementing gameplay and multiplayer.
+Have done a small graphics rewrite, added an obnoxious purple tint over everything and made stuff pixelated. (proof of concept for post processing, as I have introduced a framebuffer)
+I also made my own map in trenchbroom, this should allow for extremely fast BSP optimisations in the future, as I can simply store if a partition is "solid", like quake did.
 
 I expect to be done some time in the summer, but will continue development and refactoring intermittently until I'm happy.
 
