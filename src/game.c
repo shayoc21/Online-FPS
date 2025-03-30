@@ -198,6 +198,7 @@ void movePlayerHeight(Game* game, vec3 translation)
 }
 	
 int a = 1;
+//this is really hacky and i hate it but it will stay because i couldnt be arsed to make it better
 void nothingFunction(GLFWwindow* window, double xpos, double ypos){return;}
 
 void pollInputs(Game* game)
@@ -252,6 +253,10 @@ void pollInputs(Game* game)
 	{
 		printf("CAMERADIR : %f %f %f\n", currentCamera->front.x, currentCamera->front.y, currentCamera->front.z);
 		printf("CAMERAPOS : %f %f %f\n", currentCamera->position.x, currentCamera->position.y, currentCamera->position.z);
+
+		// beautiful debugging code I wrote at the peak of my BSP tree agony
+		// will stay
+
 		/*FaceCollision f = {0};
 		f.distance = FLT_MAX;
 		Ray FUCKMYLIFE = {normalizeVec3(currentCamera->front), currentCamera->position};
@@ -291,7 +296,7 @@ int isGameRunning(Game* game)
 void renderGame(Game* game, Renderer* renderer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, renderer->FBO);
-	glViewport(0, 0, 320, 180);
+	glViewport(0, 0, GAMEWIDTH, GAMEHEIGHT);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	drawScene(&game->scene);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

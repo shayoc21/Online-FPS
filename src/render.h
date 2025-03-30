@@ -6,6 +6,9 @@
 
 #include "objparser.h"
 
+#define GAMEHEIGHT 304
+#define GAMEWIDTH 704
+
 struct Renderer
 {
 	GLuint FBO;

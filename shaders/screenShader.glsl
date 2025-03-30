@@ -23,7 +23,7 @@ void main()
 {
 	vec4 color = texture(screenTexture, tex);
 
-	vec3 purple = vec3(0.8, 0.0, 0.8);
+	vec3 purple = vec3(0.99, 0.6, 0.99);
 
 	color.rgb *= purple;
 
