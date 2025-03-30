@@ -6,7 +6,7 @@
 
 #include "objparser.h"
 
-#define GAMEHEIGHT 304
+#define GAMEHEIGHT 396
 #define GAMEWIDTH 704
 
 struct Renderer
