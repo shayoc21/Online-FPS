@@ -10,12 +10,13 @@
 #include "scene.h"
 #include "camera.h"
 #include "session.h"
+#include "render.h"
 
 struct Game
 {
 	GLFWwindow* window;
 	Scene scene;
-	//HUD HUD;
+	Renderer renderer;
 	Camera playerCamera;
 };
 typedef struct Game Game;

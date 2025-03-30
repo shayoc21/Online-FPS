@@ -7,8 +7,8 @@
 #include <string.h>
 
 #include "mathlibrary/maths.h"
-#include "dependencies/stb/stb_image.h"
-#include "shaders/shader.h"
+#include "../dependencies/stb/stb_image.h"
+#include "../shaders/shader.h"
 
 struct Mesh
 {

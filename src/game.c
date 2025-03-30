@@ -4,6 +4,7 @@
 void pollInputs(Game* game);
 int isGameRunning(Game* game);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+void renderGame(Game* game, Renderer* renderer);
 
 void initGame(Game* game)
 {
@@ -11,9 +12,9 @@ void initGame(Game* game)
 
 	initWindow(&game->window);
 	initGL();
+	initRenderer(&game->renderer);
 
 	initScene(&game->scene);
-	//initHUD(&game->HUD);
 	
 	initCamera(&game->playerCamera, vector(-65.0f, 118.0f, 58.0f), vector(1.0f, -0.115f, 0.0f), 90);
 
@@ -29,31 +30,7 @@ void runGame(Game* game)
 	printf("Running Game...\n");
 	int frameCount = 0;
 	float previousTime = glfwGetTime();
-	
-	Object* object = game->scene.worldObjects[0];
-	Face* rayFaces = (Face*)malloc(sizeof(Face));
-	int faceCount = 0;
-	Ray playerRay = {normalizeVec3(currentCamera->front), currentCamera->position};
-	raycastBSP(object->collisionMesh, playerRay, &rayFaces, &faceCount);
-	printf("FaceCount: %d\n", faceCount);
 
-	GLuint VAOR;
-	glGenVertexArrays(1, &VAOR);
-	glBindVertexArray(VAOR);
-
-	GLuint VBOR;
-	glGenBuffers(1, &VBOR);
-	glBindBuffer(GL_ARRAY_BUFFER, VBOR);
-	glBufferData(GL_ARRAY_BUFFER, faceCount*sizeof(Face), rayFaces, GL_STATIC_DRAW);
-	free(rayFaces);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*) 0);
-	glEnableVertexAttribArray(0);
-	glBindVertexArray(0);
-
-	GLuint SHADERR = loadShader("shaders/debugBlue.glsl");
-	printf("sr: %d\n", SHADERR);
-	
 	float v[9] = 
 	{
 		0.0f, 0.0f, 0.0f,
@@ -83,31 +60,8 @@ void runGame(Game* game)
 		frameCount++;
 		pollInputs(game);
 
-		clearScreen();
-
 		//draw screen
-
-		Face* rayFaces = (Face*)malloc(sizeof(Face));
-		int faceCount = 0;
-		Ray playerRay = {normalizeVec3(currentCamera->front), currentCamera->position};
-		raycastBSP(object->collisionMesh, playerRay, &rayFaces, &faceCount);
-
-		glUseProgram(SHADERR);
-		glBindVertexArray(VAOR);
-		glBindBuffer(GL_ARRAY_BUFFER, VBOR);
-		glBufferData(GL_ARRAY_BUFFER, faceCount*sizeof(Face), rayFaces, GL_STATIC_DRAW);
-		free(rayFaces);
-
-		int plr = glGetUniformLocation(SHADERR, "projection");
-		int vlr = glGetUniformLocation(SHADERR, "view");
-
-		glUniformMatrix4fv(plr, 1, GL_TRUE, currentCamera->projection.m);
-		glUniformMatrix4fv(vlr, 1, GL_TRUE, currentCamera->view.m);
-
-		glDrawArrays(GL_TRIANGLES, 0, 3*faceCount);
-		
-		drawScene(&game->scene);
-		//drawHUD(&game->HUD);
+		renderGame(game, &game->renderer);
 
 		glDisable(GL_DEPTH_TEST);
 		glUseProgram(SHADERCROSSHAIR);
@@ -216,104 +170,6 @@ void movePlayer(Game* game, vec3 translation)
 	camera->view = lookMat4(camera->position, addVec3(camera->position, camera->front), camera->up);
 }
 
-/*
-void movePlayer(Game* game, vec3 translation)
-{
-
-//this function allows movement in x and z axis, y axis will be handled by separate gravity function
-
-	*
-		Must:
-			split translation into 3 vectors representing the player movement
-			cast these vectors from slightly infront of and to the side of the player.
-			this will create a sort of "box" around the player
-
-			raycast with those vectors. if the ray collides at a shorter distance than the ray itself:
-				Scale the ray, store it
-
-			This process is repeated for the head and the feet of the player.
-			The shorter rays will be used for movement.
-		
-
-	vec3 xMotion = {translation.x, 0, 0};
-	vec3 zMotion = {0, 0, translation.z};
-
-	Ray xRayTop = {xMotion, {currentCamera->position.x+0.05f, currentCamera->position.y, currentCamera->position.z}};
-	Ray zRayTop = {zMotion, {currentCamera->position.x, currentCamera->position.y, currentCamera->position.z+0.05f}};
-	
-	Ray xRayBottom = {xMotion, {currentCamera->position.x+0.05f, currentCamera->position.y-1.0f, currentCamera->position.z}};
-	Ray zRayBottom = {zMotion, {currentCamera->position.x, currentCamera->position.y-1.0f, currentCamera->position.z+0.05f}};
-
-	Ray xRays[2] = {xRayTop,xRayBottom};
-	Ray zRays[2] = {zRayTop,zRayBottom};
-
-	Object* obj = game->scene.worldObjects[0];
-	float shortestDistanceX = FLT_MAX;
-	float scale;
-
-	for (int i = 0; i < 2; i++)
-	{
-		Face* rayFaces = (Face*)malloc(sizeof(Face));
-		int rayFaceCount = 0;
-		raycastBSP(obj->collisionMesh, xRays[i], &rayFaces, &rayFaceCount);
-		for (int j = 0; j < rayFaceCount; j++)
-		{
-			Collision c = mollerTrumboreRaycast(xRays[i], rayFaces[j]);
-			if (c.status && c.t > 0)
-			{
-				if (c.t < shortestDistanceX)
-				{
-					shortestDistanceX = c.t;
-				}
-			}
-		}
-		free(rayFaces);
-	}
-
-	//scale x movement
-	if (shortestDistanceX < fabsf(translation.x))
-	{
-		printf("COLLISION SHOULDVE BEEN FOUND HERE!\n");
-		scale = shortestDistanceX/translation.x;
-		xMotion = scaleVec3(xMotion, scale);
-	}
-
-	float shortestDistanceZ = FLT_MAX;
-
-	for (int i = 0; i < 2; i++)
-	{
-		Face* rayFaces = (Face*)malloc(sizeof(Face));
-		int rayFaceCount = 0;
-		raycastBSP(obj->collisionMesh, zRays[i], &rayFaces, &rayFaceCount);
-		for (int j = 0; j < rayFaceCount; j++)
-		{
-			Collision c = mollerTrumboreRaycast(zRays[i], rayFaces[j]);
-			if (c.status)
-			{
-				if (c.t < shortestDistanceZ)
-				{
-					shortestDistanceZ = c.t;
-				}
-			}
-		}
-		free(rayFaces);
-	}
-
-	//scale z movement
-	if (shortestDistanceZ < fabsf(translation.z))
-	{
-		printf("COLLISION SHOULDVE BEEN FOUND HERE!\n");
-		scale = shortestDistanceZ / translation.z;
-		zMotion = scaleVec3(zMotion, scale);
-	}
-	
-	//move player
-	Camera* camera = currentCamera;
-	camera->position = addVec3(camera->position, xMotion);
-	camera->position = addVec3(camera->position, zMotion);
-	camera->view = lookMat4(camera->position, addVec3(camera->position, camera->front), camera->up);
-}
-*/
 
 void movePlayerHeight(Game* game, vec3 translation)
 {
@@ -341,6 +197,8 @@ void movePlayerHeight(Game* game, vec3 translation)
 	return;
 }
 	
+int a = 1;
+void nothingFunction(GLFWwindow* window, double xpos, double ypos){return;}
 
 void pollInputs(Game* game)
 {
@@ -399,7 +257,7 @@ void pollInputs(Game* game)
 		Ray FUCKMYLIFE = {normalizeVec3(currentCamera->front), currentCamera->position};
 		raycastBSP(game->scene.worldObjects[0]->collisionMesh, FUCKMYLIFE, &f);
 		Face c = f.collidedFace;
-		printf("Looked at face FUCK MY LIFE DUDE:\n"
+printf("Looked at face FUCK MY LIFE DUDE:\n"
 			   "	%f %f %f\n	%f %f %f\n	%f %f %f\n",
 				c.a.x,c.a.y,c.a.z,c.b.x,c.b.y,c.b.z,c.c.x,c.c.y,c.c.z);*/
 
@@ -408,9 +266,43 @@ void pollInputs(Game* game)
 	{
 		resetCamera(currentCamera);
 	}
+	if (glfwGetKey(game->window, GLFW_KEY_Y) == GLFW_PRESS)
+	{
+		if (a)
+		{
+			glfwSetInputMode(game->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			glfwSetCursorPosCallback(game->window, nothingFunction);	
+			a = 0;
+		}
+		else
+		{
+			glfwSetInputMode(game->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetCursorPosCallback(game->window, mouseCallback);	
+			a = 1;
+		}
+	}
 }
 
 int isGameRunning(Game* game)
 {
 	return !glfwWindowShouldClose(game->window);
 }
+
+void renderGame(Game* game, Renderer* renderer)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, renderer->FBO);
+	glViewport(0, 0, 320, 180);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	drawScene(&game->scene);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glViewport(0, 0, 1280, 720);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(renderer->SCREENSHADER);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, renderer->SCREENTEXTURE);
+	glBindVertexArray(renderer->SCREENVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+	
+

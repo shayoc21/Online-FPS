@@ -51,7 +51,7 @@ void initObject
 	object->vertexCount = objectMesh.vertexCount;
 
 	object->TEXTURE = loadTexture(textureFile);
-	object->SHADER = loadShader("shaders/worldShader.glsl");
+	object->SHADER = loadShader("./shaders/worldShader.glsl");
 	
 	if (solid)
 	{
@@ -94,7 +94,7 @@ void initSkybox(Object* object, const char* texturePrefix)
 	glBindVertexArray(0);
 
 	object->TEXTURE = loadCubemap(texturePrefix);
-	object->SHADER = loadShader("shaders/skyboxShader.glsl");
+	object->SHADER = loadShader("./shaders/skyboxShader.glsl");
 }
 
 void drawObject(Object* object)

@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 		   "  By Shay O'Connor <github: shayoc21>\n"
 		   "=================\n\n"
 	);
-	Game game;
+	Game game = {0};
 	initGame(&game);
 	runGame(&game);
 	closeGame(&game);

@@ -25,7 +25,7 @@ void initWindow(GLFWwindow** window)
 	glfwSetInputMode(*window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwMakeContextCurrent(*window);
-	glfwSwapInterval(0);
+	glfwSwapInterval(1);
 	printf("		...Done\n");
 }
 
