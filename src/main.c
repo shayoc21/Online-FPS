@@ -4,7 +4,7 @@ int main(int argc, char** argv)
 {
 	printf
 	(
-		   "\n==i hate bsp==\n"
+		   "\n=====Online-FPS==\n"
 		   "  By Shay O'Connor <github: shayoc21>\n"
 		   "=================\n\n"
 	);
