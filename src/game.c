@@ -198,7 +198,7 @@ void movePlayerHeight(Game* game, vec3 translation)
 }
 	
 int a = 1;
-//this is really hacky and i hate it but it will stay because i couldnt be arsed to make it better
+//used to deny inputs, by doing nothing when called.
 void nothingFunction(GLFWwindow* window, double xpos, double ypos){return;}
 
 void pollInputs(Game* game)
@@ -253,19 +253,6 @@ void pollInputs(Game* game)
 	{
 		printf("CAMERADIR : %f %f %f\n", currentCamera->front.x, currentCamera->front.y, currentCamera->front.z);
 		printf("CAMERAPOS : %f %f %f\n", currentCamera->position.x, currentCamera->position.y, currentCamera->position.z);
-
-		// beautiful debugging code I wrote at the peak of my BSP tree agony
-		// will stay
-
-		/*FaceCollision f = {0};
-		f.distance = FLT_MAX;
-		Ray FUCKMYLIFE = {normalizeVec3(currentCamera->front), currentCamera->position};
-		raycastBSP(game->scene.worldObjects[0]->collisionMesh, FUCKMYLIFE, &f);
-		Face c = f.collidedFace;
-printf("Looked at face FUCK MY LIFE DUDE:\n"
-			   "	%f %f %f\n	%f %f %f\n	%f %f %f\n",
-				c.a.x,c.a.y,c.a.z,c.b.x,c.b.y,c.b.z,c.c.x,c.c.y,c.c.z);*/
-
 	}
 	if (glfwGetKey(game->window, GLFW_KEY_R) == GLFW_PRESS)
 	{
