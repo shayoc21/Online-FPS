@@ -1,4 +1,4 @@
-Early Development.
+Engine development
 
 A 3D first person shooter written in my own engine, developed entirely from scratch in C, only using a handful of low level dependencies (stb, glfw, glew).
 
