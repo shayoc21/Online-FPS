@@ -1,0 +1,2 @@
+#!/bin/bash
+gcc -O0 -g -fsanitize=address -o main ./src/main.c ./src/collision.c ./src/camera.c ./src/raycast.c ./src/game.c ./src/scene.c ./src/object.c ./src/objparser.c ./src/mathlibrary/maths.c ./src/session.c ./src/render.c shaders/shader.c -lm -I/usr/include/GLFW -I/usr/include/GL -lGL -lglfw -lGLEW
