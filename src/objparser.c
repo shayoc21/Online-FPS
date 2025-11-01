@@ -3,93 +3,101 @@
 
 Mesh loadObj(const char* objPath)
 {
-	//currently limited to 10000 vertices
-	//all vertices must be of format vvv tt nnn
-
-	vec3 p[100000];
-	uv t[100000];
-	vec3 n[100000];
-	int positionCounter = 0;
-	int texCounter = 0;
-	int normalCounter = 0;
-	
-	Vertex vertices[100000];
-	int vertexCounter = 0;
-	unsigned int indices[100000];
-	int indexCounter = 0;
-	
 	FILE* objFile = fopen(objPath, "r");
-	if (!objFile)
+	if(!objFile)
 	{
 		printf("Failed to open file: %s\n", objPath);
-		return (Mesh) {0, 0};
+		return (Mesh){0,0};
 	}
 
+	int positionCount=0,texCount=0,normalCount=0,faceCount=0;
 	char line[128];
-	while(fgets(line, sizeof(line), objFile))
+	while(fgets(line,sizeof(line),objFile))
 	{
-		if (strncmp(line, "v ", 2) == 0)
+		if(strncmp(line,"v ",2)==0)positionCount++;
+		else if(strncmp(line,"vt ",3)==0)texCount++;
+		else if(strncmp(line,"vn ",3)==0)normalCount++;
+		else if(strncmp(line,"f ",2)==0)faceCount++;
+	}
+
+	vec3* p=malloc(sizeof(vec3)*positionCount);
+	uv* t=malloc(sizeof(uv)*texCount);
+	vec3* n=malloc(sizeof(vec3)*normalCount);
+	Vertex* vertices=malloc(sizeof(Vertex)*faceCount*3);
+	unsigned int* indices=malloc(sizeof(unsigned int)*faceCount*3);
+
+	rewind(objFile);
+	int positionCounter=0,texCounter=0,normalCounter=0,vertexCounter=0,indexCounter=0;
+	while(fgets(line,sizeof(line),objFile))
+	{
+		if(strncmp(line,"v ",2)==0)
 		{
-			sscanf(line, "v %f %f %f", &p[positionCounter].x, &p[positionCounter].y, &p[positionCounter].z);
+			sscanf(line,"v %f %f %f",&p[positionCounter].x,&p[positionCounter].y,&p[positionCounter].z);
 			positionCounter++;
 		}
-		else if (strncmp(line, "vt ", 3) == 0)
+		else if(strncmp(line,"vt ",3)==0)
 		{
-			sscanf(line, "vt %f %f", &t[texCounter].u, &t[texCounter].v);
+			sscanf(line,"vt %f %f",&t[texCounter].u,&t[texCounter].v);
 			texCounter++;
 		}
-		else if (strncmp(line, "vn ", 3) == 0)
+		else if(strncmp(line,"vn ",3)==0)
 		{
-			sscanf(line, "vn %f %f %f", &n[normalCounter].x, &n[normalCounter].y, &n[normalCounter].z);
+			sscanf(line,"vn %f %f %f",&n[normalCounter].x,&n[normalCounter].y,&n[normalCounter].z);
 			normalCounter++;
 		}
-		else if (strncmp(line, "f ", 2) == 0)
+		else if(strncmp(line,"f ",2)==0)
 		{
-			int positionIndex[3], uvIndex[3], normalIndex[3];
-			sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d", 
-				&positionIndex[0], &uvIndex[0], &normalIndex[0],
-				&positionIndex[1], &uvIndex[1], &normalIndex[1],
-				&positionIndex[2], &uvIndex[2], &normalIndex[2]);
-			for (int i = 0; i < 3; i++)
+			int positionIndex[3],uvIndex[3],normalIndex[3];
+			sscanf(line,"f %d/%d/%d %d/%d/%d %d/%d/%d",
+				&positionIndex[0],&uvIndex[0],&normalIndex[0],
+				&positionIndex[1],&uvIndex[1],&normalIndex[1],
+				&positionIndex[2],&uvIndex[2],&normalIndex[2]);
+			for(int i=0;i<3;i++)
 			{
 				Vertex faceVertex;
-				faceVertex.position = p[positionIndex[i]-1];
-				faceVertex.texCoords = t[uvIndex[i]-1];
-				faceVertex.normal = n[normalIndex[i]-1];
-				vertices[vertexCounter] = faceVertex;
-				indices[indexCounter] = positionIndex[i];
+				faceVertex.position=p[positionIndex[i]-1];
+				faceVertex.texCoords=t[uvIndex[i]-1];
+				faceVertex.normal=n[normalIndex[i]-1];
+				vertices[vertexCounter]=faceVertex;
+				indices[indexCounter]=positionIndex[i];
 				vertexCounter++;
 				indexCounter++;
 			}
 		}
 	}
 	fclose(objFile);
-	
-	GLuint VAO, VBO, EBO;
-	glGenVertexArrays(1, &VAO);
+
+	GLuint VAO,VBO,EBO;
+	glGenVertexArrays(1,&VAO);
 	glBindVertexArray(VAO);
 
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
+	glGenBuffers(1,&VBO);
+	glGenBuffers(1,&EBO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertexCounter*sizeof(Vertex), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER,VBO);
+	glBufferData(GL_ARRAY_BUFFER,vertexCounter*sizeof(Vertex),vertices,GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCounter*sizeof(unsigned int), indices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,indexCounter*sizeof(unsigned int),indices,GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-	
+	glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,position));
+	glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,texCoords));
+	glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),(void*)offsetof(Vertex,normal));
+
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 
 	glBindVertexArray(0);
-	return (Mesh) {VAO, vertexCounter};
+
+	free(p);
+	free(t);
+	free(n);
+	free(vertices);
+	free(indices);
+
+	return (Mesh){VAO,vertexCounter};
 }
-			          
 GLuint loadTexture(const char* texturePath)
 {
 	GLuint TEX;

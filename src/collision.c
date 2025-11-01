@@ -84,6 +84,7 @@ int splitTriangle(Face triangle, Plane plane, Face** out)
 Plane selectPlane(Face* faces, int faceCount)
 {
 	printf("Selecting plane! faceCount : %d\n", faceCount);
+
 	//heuristic finds the best splitting plane.
 	float bestCost = FLT_MAX;
 	Plane bestPlane = { {0,0,0}, 0 };
@@ -148,7 +149,6 @@ Plane selectPlane(Face* faces, int faceCount)
 	printf("Done\n");
 	return bestPlane;				
 }
-
 void partitionFaces(Face* faces, int faceCount, Plane plane, Face** frontFaces, Face** backFaces, int* frontCount, int* backCount)
 {
 	*frontCount = 0;
@@ -251,10 +251,12 @@ BSPNode* generateBSPTree(Face* faces, int faceCount)
 
 BSPNode* generateCollisionMesh(const char* collisionFileSuffix)
 {
-	Face* faces = (Face*)malloc(0);
+	Face* faces = NULL;
 	int faceCount = 0;
-	vec3 vertices[100000];
+	int faceCap = 0;
+	vec3* vertices = NULL;
 	int vc = 0;
+	int vertexCap = 0;
 
 	char buffer[120];
 	snprintf(buffer, sizeof(buffer), "%s%s", "./models/collision", collisionFileSuffix);
@@ -266,10 +268,17 @@ BSPNode* generateCollisionMesh(const char* collisionFileSuffix)
 	}
 
 	char line[128];
+	int c = 0;
 	while(fgets(line, sizeof(line), collisionFile))
 	{
 		if (strncmp(line, "v ", 2) == 0)
 		{
+			if(vc>=vertexCap)
+			{
+				//exponential buffer growth
+				vertexCap = vertexCap ? vertexCap*2 : 1024;
+				vertices = realloc(vertices,sizeof(vec3)*vertexCap);
+			}
 			sscanf(line, "v %f %f %f", &vertices[vc].x, &vertices[vc].y, &vertices[vc].z);
 			vc++;
 		}
@@ -281,15 +290,21 @@ BSPNode* generateCollisionMesh(const char* collisionFileSuffix)
 			face.a = vertices[positions[0]-1];
 			face.b = vertices[positions[1]-1];
 			face.c = vertices[positions[2]-1];
-			faceCount++;
-			faces = (Face*)realloc(faces, sizeof(Face)*faceCount);
-			faces[faceCount-1] = face;
+			if(faceCount>=faceCap)
+			{
+				faceCap = faceCap ? faceCap*2 : 1024;
+				faces = realloc(faces,sizeof(Face)*faceCap);
+			}
+			faces[faceCount++] = face;
 		}
 	}
 	fclose(collisionFile);
 	
 	printf("			...Generating BSP for Object %s\n", collisionFileSuffix);
 	BSPNode* rootNode = generateBSPTree(faces, faceCount);
+
+	free(vertices);
+	return rootNode;
 }
 
 void transformFace(Face* face, mat4 matrix)

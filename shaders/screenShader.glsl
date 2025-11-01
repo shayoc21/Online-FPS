@@ -36,17 +36,17 @@ void main()
 	vec4 color = texture(screenTexture, tex);
 	//aberration
 
-	float redOffset = 0.06 * sin(time * 0.5);
-	float greenOffset = 0.04 * sin(time * 0.5);
-	float blueOffset = -0.04 * sin(time * 0.5);
+	float redOffset = 0.06 * sin(time * 0.5) * dist * 2;
+	float greenOffset = 0.04 * sin(time * 0.5) * dist * 2;
+	float blueOffset = -0.04 * sin(time * 0.5) * dist * 2;
 	vec2 texSize = textureSize(screenTexture, 0).xy;
 	vec2 direction = tex - center;
 	color.r = texture(screenTexture, tex + (direction * vec2(redOffset, 0))).r;
 	color.g = texture(screenTexture, tex + (direction * vec2(greenOffset, 0))).g;
 	color.b = texture(screenTexture, tex + (direction * vec2(blueOffset, 0))).b;
-
-	vec3 purple = vec3(0.7, 1.1, 0.9);
-	color.rgb *= purple;
+	
+	vec3 tint = vec3(0.9+sin(time * 0.1) * 0.2, 0.9-sin(time * 0.1) * 0.2, 0.9);
+	color.rgb *= tint;
 
 	//film grain using time for randomness
 	float grain = rand(tex * gl_FragCoord.xy + time) * 0.05;
@@ -56,7 +56,7 @@ void main()
 	float radius = 0.5 + 0.05 * sin(time * 0.5);
 	float edge = 0.3;
 	float vignette = smoothstep(radius, radius+edge, dist);
-	color.rgb *= 1.0 - 0.99 * vignette;
+	color.rgb *= 1.0 - 0.9 * vignette;
 	
 	color = round(color * 8.0) / 8.0;
 	fragColor = color;

@@ -14,7 +14,7 @@ void initWorldmap(Scene* scene)
 {
 	Object worldObject;
 	printf("		...Initializing Objects\n");
-	initObject(&worldObject, vector(100.0f, 100.0f, 0.0f), vector(8.0f, 8.0f, 8.0f), quat(vector(0.0, 1.0, 0.0), 0.0), "./models/dust.obj", "./textures/dust.png", 1);
+	initObject(&worldObject, vector(100.0f, 100.0f, 0.0f), vector(8.0f, 8.0f, 8.0f), quat(vector(0.0, 1.0, 0.0), 0.0), "./models/dust.obj", "./textures/wall.png", 1);
 	addObjectToScene(scene, &worldObject);
 	printf("			...Done\n");
 	printf("		...Initializing Skybox\n");

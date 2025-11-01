@@ -1,6 +1,6 @@
 # Blender 4.5.4 LTS
 # www.blender.org
-mtllib cube.mtl
+mtllib collisioncastle.mtl
 o E1M1.002
 v -198.400009 2.399972 -155.420029
 v -198.400009 6.399972 -155.420029
