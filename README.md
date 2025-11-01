@@ -6,4 +6,6 @@ The textures are stretched/distorted. This is not a problem with my code, I just
 
 ![What the game looks like](./demoimage.png)
 
+Note: Missing about 20 early commits prior to v0.1
+
 
