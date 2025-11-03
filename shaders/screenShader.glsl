@@ -57,7 +57,8 @@ void main()
 	float edge = 0.3;
 	float vignette = smoothstep(radius, radius+edge, dist);
 	color.rgb *= 1.0 - 0.9 * vignette;
-	
-	color = round(color * 8.0) / 8.0;
+
+	float bands = 8;
+	color = round(color * bands) / bands;
 	fragColor = color;
 }
